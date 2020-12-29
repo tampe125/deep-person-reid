@@ -1,4 +1,5 @@
 from __future__ import division, print_function, absolute_import
+import albumentations
 import copy
 import numpy as np
 import os.path as osp
@@ -288,6 +289,12 @@ class Dataset(object):
         """Transforms a raw image (img0) k_tfm times with
         the transform function tfm.
         """
+        if isinstance(tfm, albumentations.Compose):
+            image_np = np.array(img0)
+            augmented = tfm(image=image_np)
+
+            return augmented['image']
+
         img_list = []
 
         for k in range(k_tfm):
