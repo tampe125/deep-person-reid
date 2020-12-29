@@ -1,4 +1,5 @@
 from __future__ import division, print_function, absolute_import
+import albumentations
 import math
 import random
 from collections import deque
@@ -255,62 +256,67 @@ def build_transforms(
     if isinstance(transforms, str):
         transforms = [transforms]
 
-    if not isinstance(transforms, list):
+    if not isinstance(transforms, list) and not isinstance(transforms, albumentations.Compose):
         raise ValueError(
-            'transforms must be a list of strings, but found to be {}'.format(
+            'transforms must be a list of strings or an Albumentation.Compose object, but found to be {}'.format(
                 type(transforms)
             )
         )
 
-    if len(transforms) > 0:
+    if isinstance(transforms, list) and len(transforms) > 0:
         transforms = [t.lower() for t in transforms]
 
     if norm_mean is None or norm_std is None:
-        norm_mean = [0.485, 0.456, 0.406] # imagenet mean
-        norm_std = [0.229, 0.224, 0.225] # imagenet std
+        norm_mean = [0.485, 0.456, 0.406]   # imagenet mean
+        norm_std = [0.229, 0.224, 0.225]    # imagenet std
     normalize = Normalize(mean=norm_mean, std=norm_std)
 
     print('Building train transforms ...')
-    transform_tr = []
 
-    print('+ resize to {}x{}'.format(height, width))
-    transform_tr += [Resize((height, width))]
+    if isinstance(transforms, albumentations.Compose):
+        print("Using already composed set of transforms")
+        transform_tr = transforms
+    else:
+        transform_tr = []
 
-    if 'random_flip' in transforms:
-        print('+ random flip')
-        transform_tr += [RandomHorizontalFlip()]
+        print('+ resize to {}x{}'.format(height, width))
+        transform_tr += [Resize((height, width))]
 
-    if 'random_crop' in transforms:
-        print(
-            '+ random crop (enlarge to {}x{} and '
-            'crop {}x{})'.format(
-                int(round(height * 1.125)), int(round(width * 1.125)), height,
-                width
+        if 'random_flip' in transforms:
+            print('+ random flip')
+            transform_tr += [RandomHorizontalFlip()]
+
+        if 'random_crop' in transforms:
+            print(
+                '+ random crop (enlarge to {}x{} and '
+                'crop {}x{})'.format(
+                    int(round(height * 1.125)), int(round(width * 1.125)), height,
+                    width
+                )
             )
-        )
-        transform_tr += [Random2DTranslation(height, width)]
+            transform_tr += [Random2DTranslation(height, width)]
 
-    if 'random_patch' in transforms:
-        print('+ random patch')
-        transform_tr += [RandomPatch()]
+        if 'random_patch' in transforms:
+            print('+ random patch')
+            transform_tr += [RandomPatch()]
 
-    if 'color_jitter' in transforms:
-        print('+ color jitter')
-        transform_tr += [
-            ColorJitter(brightness=0.2, contrast=0.15, saturation=0, hue=0)
-        ]
+        if 'color_jitter' in transforms:
+            print('+ color jitter')
+            transform_tr += [
+                ColorJitter(brightness=0.2, contrast=0.15, saturation=0, hue=0)
+            ]
 
-    print('+ to torch tensor of range [0, 1]')
-    transform_tr += [ToTensor()]
+        print('+ to torch tensor of range [0, 1]')
+        transform_tr += [ToTensor()]
 
-    print('+ normalization (mean={}, std={})'.format(norm_mean, norm_std))
-    transform_tr += [normalize]
+        print('+ normalization (mean={}, std={})'.format(norm_mean, norm_std))
+        transform_tr += [normalize]
 
-    if 'random_erase' in transforms:
-        print('+ random erase')
-        transform_tr += [RandomErasing(mean=norm_mean)]
+        if 'random_erase' in transforms:
+            print('+ random erase')
+            transform_tr += [RandomErasing(mean=norm_mean)]
 
-    transform_tr = Compose(transform_tr)
+        transform_tr = Compose(transform_tr)
 
     print('Building test transforms ...')
     print('+ resize to {}x{}'.format(height, width))
