@@ -209,16 +209,17 @@ class Engine(object):
                 self.save_model(self.epoch, rank1, save_dir)
 
         if self.max_epoch > 0:
-            print('=> Final test')
-            rank1 = self.test(
-                dist_metric=dist_metric,
-                normalize_feature=normalize_feature,
-                visrank=visrank,
-                visrank_topk=visrank_topk,
-                save_dir=save_dir,
-                use_metric_cuhk03=use_metric_cuhk03,
-                ranks=ranks
-            )
+            if eval_freq > 0:
+                print('=> Final test')
+                rank1 = self.test(
+                    dist_metric=dist_metric,
+                    normalize_feature=normalize_feature,
+                    visrank=visrank,
+                    visrank_topk=visrank_topk,
+                    save_dir=save_dir,
+                    use_metric_cuhk03=use_metric_cuhk03,
+                    ranks=ranks
+                )
             self.save_model(self.epoch, rank1, save_dir)
 
         elapsed = round(time.time() - time_start)
