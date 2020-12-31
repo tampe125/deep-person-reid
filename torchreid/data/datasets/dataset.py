@@ -289,16 +289,16 @@ class Dataset(object):
         """Transforms a raw image (img0) k_tfm times with
         the transform function tfm.
         """
-        if isinstance(tfm, albumentations.Compose):
-            image_np = np.array(img0)
-            augmented = tfm(image=image_np)
-
-            return augmented['image']
-
         img_list = []
 
         for k in range(k_tfm):
-            img_list.append(tfm(img0))
+            if isinstance(tfm, albumentations.Compose):
+                image_np = np.array(img0)
+                augmented = tfm(image=image_np)
+
+                img_list.append(augmented['image'])
+            else:
+                img_list.append(tfm(img0))
 
         img = img_list
         if len(img) == 1:
