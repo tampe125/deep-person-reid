@@ -220,12 +220,12 @@ class MobileNetV2(nn.Module):
             raise KeyError("Unsupported loss: {}".format(self.loss))
 
 
-def init_pretrained_weights(model, model_url):
+def init_pretrained_weights(model, model_url, file_name=None):
     """Initializes model with pretrained weights.
     
     Layers that don't match with pretrained layers in name or size are kept unchanged.
     """
-    pretrain_dict = model_zoo.load_url(model_url)
+    pretrain_dict = model_zoo.load_url(model_url, file_name=file_name)
     model_dict = model.state_dict()
     pretrain_dict = {
         k: v
@@ -265,7 +265,7 @@ def mobilenetv2_x1_4(num_classes, loss, pretrained=True, **kwargs):
         **kwargs
     )
     if pretrained:
-        # init_pretrained_weights(model, model_urls['mobilenetv2_x1_4'])
+        init_pretrained_weights(model, model_urls['mobilenetv2_x1_4'], file_name='mobilenetv2_1.4-bc1cc36b.pth')
         import warnings
         warnings.warn(
             'The imagenet pretrained weights need to be manually downloaded from {}'
