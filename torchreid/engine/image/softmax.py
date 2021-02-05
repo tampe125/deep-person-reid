@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import torch
 from torchreid import metrics
 from torchreid.losses import CrossEntropyLoss
 
@@ -68,6 +69,7 @@ class ImageSoftmaxEngine(Engine):
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.register_model('model', model, optimizer, scheduler)
+        self.scaler = torch.cuda.amp.GradScaler()
 
         self.criterion = CrossEntropyLoss(
             num_classes=self.datamanager.num_train_pids,
@@ -82,12 +84,15 @@ class ImageSoftmaxEngine(Engine):
             imgs = imgs.cuda()
             pids = pids.cuda()
 
-        outputs = self.model(imgs)
-        loss = self.compute_loss(self.criterion, outputs, pids)
+        with torch.cuda.amp.autocast():
+            outputs = self.model(imgs)
+            loss = self.compute_loss(self.criterion, outputs, pids)
+
+        self.scaler.scale(loss).backward()
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
 
         self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
 
         loss_summary = {
             'loss': loss.item(),
