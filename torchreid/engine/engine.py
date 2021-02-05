@@ -209,6 +209,7 @@ class Engine(object):
                 self.save_model(self.epoch, rank1, save_dir)
 
         if self.max_epoch > 0:
+            rank1 = 100
             if eval_freq > 0:
                 print('=> Final test')
                 rank1 = self.test(
